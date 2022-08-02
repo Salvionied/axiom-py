@@ -171,24 +171,28 @@ class DatasetsClient:  # pylint: disable=R0903
         contentType: ContentType,
         enc: ContentEncoding,
         opts: IngestOptions = None,
+        timeout: int = 3
     ) -> IngestStatus:
         """Ingest the events into the named dataset and returns the status."""
         path = "datasets/%s/ingest" % dataset
 
         # check if passed content type and encoding are correct
         if not contentType:
-            raise ValueError("unknown content-type, choose one of json,x-ndjson or csv")
+            raise ValueError(
+                "unknown content-type, choose one of json,x-ndjson or csv")
 
         if not enc:
             raise ValueError("unknown content-encoding")
 
         # set headers
-        headers = {"Content-Type": contentType.value, "Content-Encoding": enc.value}
+        headers = {"Content-Type": contentType.value,
+                   "Content-Encoding": enc.value}
         # prepare query params
         params = self._prepare_ingest_options(opts)
 
         # override the default header and set the value from the passed parameter
-        res = self.session.post(path, data=payload, headers=headers, params=params)
+        res = self.session.post(
+            path, data=payload, headers=headers, params=params, timeout=timeout)
         status_snake = decamelize(res.json())
         return Util.from_dict(IngestStatus, status_snake)
 
@@ -239,7 +243,8 @@ class DatasetsClient:  # pylint: disable=R0903
         path = "datasets/%s" % id
         res = self.session.put(path, data=ujson.dumps(asdict(req)))
         ds = Util.from_dict(Dataset, res.json())
-        self.logger.info(f"updated dataset({ds.name}) with new desc: {ds.description}")
+        self.logger.info(
+            f"updated dataset({ds.name}) with new desc: {ds.description}")
         return ds
 
     def delete(self, id: str):
@@ -256,7 +261,8 @@ class DatasetsClient:  # pylint: disable=R0903
             )
 
         path = "datasets/%s/query" % id
-        payload = ujson.dumps(asdict(query), default=Util.handle_json_serialization)
+        payload = ujson.dumps(
+            asdict(query), default=Util.handle_json_serialization)
         self.logger.debug("sending query %s" % payload)
         params = self._prepare_query_options(opts)
         res = self.session.post(path, data=payload, params=params)
